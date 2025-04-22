@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import streamlit as st
 from youtube_transcript_api import YouTubeTranscriptApi
 import google.generativeai as genai
@@ -60,3 +61,6 @@ if video_url:
                 st.write("Could not generate a summary.")
         else:
             st.write("Could not retrieve transcript.")
+=======
+
+>>>>>>> 79b97ed7ff24c30678cfaed2e315f92449cdd650
