@@ -2,11 +2,11 @@ import re
 
 import streamlit as st
 from groq import Groq
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import (
+from youtube_transcript_api import (
     NoTranscriptFound,
     TranscriptsDisabled,
     VideoUnavailable,
+    YouTubeTranscriptApi,
 )
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
