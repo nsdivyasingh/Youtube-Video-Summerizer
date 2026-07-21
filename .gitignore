@@ -1,6 +1,24 @@
+# Virtual environments
 venv/
+.venv/
+env/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Environment / secrets — never commit real keys
+.env
 .streamlit/secrets.toml
 .streamlit/secrets.toml.txt
+
+# Local audio downloads
 tmp_audio/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

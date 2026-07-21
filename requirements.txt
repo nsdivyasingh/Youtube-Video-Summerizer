@@ -2,3 +2,4 @@ streamlit
 openai
 yt-dlp
 faster-whisper
+python-dotenv

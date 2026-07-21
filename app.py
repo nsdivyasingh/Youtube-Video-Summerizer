@@ -1,15 +1,20 @@
+import os
 import re
 import shutil
 import tempfile
 from pathlib import Path
 
 import streamlit as st
+from dotenv import load_dotenv
 from faster_whisper import WhisperModel
 from openai import OpenAI
 from yt_dlp.utils import download_range_func
 
+load_dotenv()
+
 DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+PLACEHOLDER_KEY = "your-openrouter-api-key-here"
 MAX_TRANSCRIPT_CHARS = 60_000
 # Keep downloads short enough for local Whisper on CPU
 MAX_AUDIO_SECONDS = 15 * 60
@@ -100,29 +105,51 @@ st.write(
 )
 st.caption("Whisper model: tiny (Cloud-friendly). Summaries use your OpenRouter text model.")
 
+def resolve_api_key() -> tuple[str, str]:
+    """Return (api_key, source). Prefer .env, then Streamlit secrets. Never show the key."""
+    env_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if env_key and env_key != PLACEHOLDER_KEY:
+        return env_key, ".env"
+
+    try:
+        secret_key = st.secrets.get("general", {}).get("OpenRouterAPIKey", "")
+    except Exception:
+        secret_key = ""
+    if secret_key and secret_key != PLACEHOLDER_KEY:
+        return secret_key, "Streamlit secrets"
+
+    return "", ""
+
+
+def resolve_model() -> str:
+    env_model = os.getenv("OPENROUTER_MODEL", "").strip()
+    if env_model:
+        return env_model
+    try:
+        return st.secrets.get("general", {}).get("OpenRouterModel", DEFAULT_MODEL)
+    except Exception:
+        return DEFAULT_MODEL
+
+
 with st.sidebar:
     st.header("Settings")
-    secret_key = st.secrets.get("general", {}).get("OpenRouterAPIKey", "")
-    if secret_key and secret_key != "your-openrouter-api-key-here":
-        api_key = secret_key
-        st.caption("API key loaded from secrets.")
+    api_key, key_source = resolve_api_key()
+    if api_key:
+        st.caption(f"API key loaded from {key_source}.")
     else:
-        api_key = st.text_input(
-            "OpenRouter API key",
-            type="password",
-            help="Get a key at https://openrouter.ai/keys — stored only for this session.",
-        )
+        st.warning("No API key found. Add OPENROUTER_API_KEY to `.env`.")
+
     model = st.text_input(
         "Summarize model",
-        value=st.secrets.get("general", {}).get("OpenRouterModel", DEFAULT_MODEL),
+        value=resolve_model(),
         help="Any OpenRouter text model, e.g. meta-llama/llama-3.3-70b-instruct",
     )
     st.caption(f"Transcription: local Whisper ({WHISPER_MODEL_SIZE})")
 
-if not api_key or api_key == "your-openrouter-api-key-here":
+if not api_key:
     st.error(
-        "Add an OpenRouter API key in the sidebar, or set OpenRouterAPIKey in "
-        ".streamlit/secrets.toml (see secrets.toml.example)."
+        "Missing OpenRouter API key. Copy `.env.example` to `.env` and set "
+        "`OPENROUTER_API_KEY`, or set OpenRouterAPIKey in Streamlit Cloud secrets."
     )
     st.stop()
 

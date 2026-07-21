@@ -16,22 +16,21 @@ No YouTube captions required.
    ```bash
    pip install -r requirements.txt
    ```
-3. Copy secrets and add your OpenRouter key:
+3. Create a `.env` file (copy from the example) and add your OpenRouter key:
    ```bash
-   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   cp .env.example .env
    ```
-   ```toml
-   [general]
-   OpenRouterAPIKey = "your-openrouter-api-key-here"
-   # Optional
-   # OpenRouterModel = "meta-llama/llama-3.3-70b-instruct"
+   ```env
+   OPENROUTER_API_KEY=your-openrouter-api-key-here
+   OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
    ```
 4. Run:
    ```bash
    streamlit run app.py
    ```
 
-Get a key at [openrouter.ai/keys](https://openrouter.ai/keys). Never commit `.streamlit/secrets.toml`.
+Get a key at [openrouter.ai/keys](https://openrouter.ai/keys).  
+`.env` is gitignored — never commit real API keys.
 
 ---
 
