@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .streamlit/secrets.toml
 .streamlit/secrets.toml.txt
+tmp_audio/
