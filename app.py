@@ -8,7 +8,6 @@ import streamlit as st
 from dotenv import load_dotenv
 from faster_whisper import WhisperModel
 from openai import OpenAI
-from yt_dlp.utils import download_range_func
 
 load_dotenv()
 
@@ -57,9 +56,12 @@ def download_audio(watch_url: str, out_dir: Path) -> Path:
                 "preferredquality": "64",
             }
         ],
-        # Limit length so Whisper stays fast on CPU
-        "download_ranges": download_range_func(None, [(0, MAX_AUDIO_SECONDS)]),
-        "force_keyframes_at_cuts": True,
+        "postprocessor_args": {
+            "extractaudio": [
+                "-ss", "0",
+                "-t", str(MAX_AUDIO_SECONDS),
+            ]
+        },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(watch_url, download=True)
