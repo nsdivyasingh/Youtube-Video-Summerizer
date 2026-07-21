@@ -105,30 +105,46 @@ st.write(
 )
 st.caption("Whisper model: tiny (Cloud-friendly). Summaries use your OpenRouter text model.")
 
-def resolve_api_key() -> tuple[str, str]:
-    """Return (api_key, source). Prefer .env, then Streamlit secrets. Never show the key."""
-    env_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-    if env_key and env_key != PLACEHOLDER_KEY:
-        return env_key, ".env"
-
+def _secret_get(*keys: str) -> str:
+    """Read a nested or flat value from st.secrets without raising."""
     try:
-        secret_key = st.secrets.get("general", {}).get("OpenRouterAPIKey", "")
+        node = st.secrets
+        for key in keys:
+            if key not in node:
+                return ""
+            node = node[key]
+        return str(node).strip() if node is not None else ""
     except Exception:
-        secret_key = ""
-    if secret_key and secret_key != PLACEHOLDER_KEY:
-        return secret_key, "Streamlit secrets"
+        return ""
 
+
+def resolve_api_key() -> tuple[str, str]:
+    """Return (api_key, source). Prefer env/.env, then Streamlit Cloud secrets."""
+    candidates = [
+        (os.getenv("OPENROUTER_API_KEY", "").strip(), ".env / environment"),
+        (_secret_get("OPENROUTER_API_KEY"), "Streamlit secrets"),
+        (_secret_get("OpenRouterAPIKey"), "Streamlit secrets"),
+        (_secret_get("general", "OpenRouterAPIKey"), "Streamlit secrets"),
+        (_secret_get("general", "OPENROUTER_API_KEY"), "Streamlit secrets"),
+    ]
+    for value, source in candidates:
+        if value and value != PLACEHOLDER_KEY:
+            return value, source
     return "", ""
 
 
 def resolve_model() -> str:
-    env_model = os.getenv("OPENROUTER_MODEL", "").strip()
-    if env_model:
-        return env_model
-    try:
-        return st.secrets.get("general", {}).get("OpenRouterModel", DEFAULT_MODEL)
-    except Exception:
-        return DEFAULT_MODEL
+    candidates = [
+        os.getenv("OPENROUTER_MODEL", "").strip(),
+        _secret_get("OPENROUTER_MODEL"),
+        _secret_get("OpenRouterModel"),
+        _secret_get("general", "OpenRouterModel"),
+        _secret_get("general", "OPENROUTER_MODEL"),
+    ]
+    for value in candidates:
+        if value:
+            return value
+    return DEFAULT_MODEL
 
 
 with st.sidebar:
@@ -137,7 +153,10 @@ with st.sidebar:
     if api_key:
         st.caption(f"API key loaded from {key_source}.")
     else:
-        st.warning("No API key found. Add OPENROUTER_API_KEY to `.env`.")
+        st.warning(
+            "No API key found. Locally use `.env`. On Streamlit Cloud add it under "
+            "Manage app → Settings → Secrets."
+        )
 
     model = st.text_input(
         "Summarize model",
@@ -148,8 +167,13 @@ with st.sidebar:
 
 if not api_key:
     st.error(
-        "Missing OpenRouter API key. Copy `.env.example` to `.env` and set "
-        "`OPENROUTER_API_KEY`, or set OpenRouterAPIKey in Streamlit Cloud secrets."
+        "Missing OpenRouter API key.\n\n"
+        "**Streamlit Cloud:** Manage app → Settings → Secrets, paste:\n\n"
+        "```toml\n"
+        'OPENROUTER_API_KEY = "sk-or-v1-..."\n'
+        "```\n\n"
+        "Then reboot the app.\n\n"
+        "**Local:** copy `.env.example` to `.env` and set `OPENROUTER_API_KEY`."
     )
     st.stop()
 

@@ -45,13 +45,11 @@ The in-app **Deploy** button often fails for private repos or OneDrive paths. De
    - **Repository:** `nsdivyasingh/Youtube-Video-Summerizer`
    - **Branch:** `main`
    - **Main file path:** `app.py`
-4. Under **Advanced settings → Secrets**, paste:
+4. Under **Advanced settings → Secrets** (or Manage app → Settings → Secrets), paste:
    ```toml
-   [general]
-   OpenRouterAPIKey = "your-openrouter-api-key-here"
+   OPENROUTER_API_KEY = "your-openrouter-api-key-here"
    ```
-5. Click **Deploy**.
-
+5. Click **Deploy**, then reboot the app after saving secrets.
 If the repo does not appear in the list:
 
 - Grant Streamlit access to the repo (GitHub → Settings → Applications → Streamlit), or
