@@ -13,7 +13,8 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 MAX_TRANSCRIPT_CHARS = 60_000
 # Keep downloads short enough for local Whisper on CPU
 MAX_AUDIO_SECONDS = 15 * 60
-WHISPER_MODEL_SIZE = "base"
+# "tiny" fits Streamlit Community Cloud RAM; use "base" locally if you prefer accuracy
+WHISPER_MODEL_SIZE = "tiny"
 
 VIDEO_ID_PATTERNS = [
     r"(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})",
@@ -97,6 +98,7 @@ st.write(
     "Paste a YouTube URL. Audio is transcribed locally (Whisper), then summarized "
     "with your OpenRouter model — no YouTube captions required."
 )
+st.caption("Whisper model: tiny (Cloud-friendly). Summaries use your OpenRouter text model.")
 
 with st.sidebar:
     st.header("Settings")
