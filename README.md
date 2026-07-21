@@ -1,47 +1,76 @@
 # YouTube Video Summarizer
 
-A Streamlit app that downloads YouTube audio, **transcribes it locally with Whisper**,
-then summarizes the transcript with any text model on [OpenRouter](https://openrouter.ai).
-No YouTube captions required (avoids caption API rate limits).
+Paste a YouTube URL → the app downloads the audio, transcribes it with local Whisper,
+then summarizes it with any text model on [OpenRouter](https://openrouter.ai).
 
-## Setup
+No YouTube captions required.
 
-1. Install dependencies (needs [ffmpeg](https://ffmpeg.org/) on your PATH for audio extract):
-   ```
+**Repo:** [nsdivyasingh/Youtube-Video-Summerizer](https://github.com/nsdivyasingh/Youtube-Video-Summerizer)
+
+---
+
+## Local setup
+
+1. Install [ffmpeg](https://ffmpeg.org/) and put it on your `PATH`.
+2. Install Python deps:
+   ```bash
    pip install -r requirements.txt
    ```
-2. Get an API key from [openrouter.ai/keys](https://openrouter.ai/keys).
-3. Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill it in:
+3. Copy secrets and add your OpenRouter key:
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   ```
    ```toml
    [general]
    OpenRouterAPIKey = "your-openrouter-api-key-here"
-   # Optional summarize model
+   # Optional
    # OpenRouterModel = "meta-llama/llama-3.3-70b-instruct"
    ```
-4. Run the app:
-   ```
+4. Run:
+   ```bash
    streamlit run app.py
    ```
 
-The first transcription downloads the Whisper `base` model (~150MB) once.
+Get a key at [openrouter.ai/keys](https://openrouter.ai/keys). Never commit `.streamlit/secrets.toml`.
 
-`.streamlit/secrets.toml` is gitignored — never commit real API keys.
+---
+
+## Deploy on Streamlit Community Cloud
+
+The in-app **Deploy** button often fails for private repos or OneDrive paths. Deploy from the website instead:
+
+1. Make sure `main` is on GitHub (already pushed to  
+   `https://github.com/nsdivyasingh/Youtube-Video-Summerizer`).
+2. Open [share.streamlit.io](https://share.streamlit.io/) and sign in with GitHub.
+3. Click **New app** and choose:
+   - **Repository:** `nsdivyasingh/Youtube-Video-Summerizer`
+   - **Branch:** `main`
+   - **Main file path:** `app.py`
+4. Under **Advanced settings → Secrets**, paste:
+   ```toml
+   [general]
+   OpenRouterAPIKey = "your-openrouter-api-key-here"
+   ```
+5. Click **Deploy**.
+
+If the repo does not appear in the list:
+
+- Grant Streamlit access to the repo (GitHub → Settings → Applications → Streamlit), or
+- Make the repo **Public** (GitHub → Settings → Danger zone → Change visibility).
+
+`packages.txt` installs `ffmpeg` on Cloud. First run downloads the Whisper model and can take a few minutes.
+
+---
 
 ## How it works
 
-1. `yt-dlp` downloads audio (up to 15 minutes)
-2. Local **faster-whisper** produces a transcript
-3. OpenRouter text model returns the summary
+1. **yt-dlp** downloads audio (up to 15 minutes)
+2. **faster-whisper** (`tiny`) transcribes locally
+3. **OpenRouter** returns the summary
 
-> OpenRouter audio/video models need account credits ($0.50–$1). This app uses local
-> transcription so you only need OpenRouter for the text summary.
+---
 
-## Deploying for free
+## Notes
 
-Vercel doesn't host long-running Streamlit servers, but these free hosts do:
-
-- **[Streamlit Community Cloud](https://share.streamlit.io/)** — connect your GitHub repo,
-  set `OpenRouterAPIKey` under app settings > Secrets in the same TOML format as above, deploy.
-- **[Hugging Face Spaces](https://huggingface.co/spaces)** — create a Space with the
-  Streamlit SDK, push this repo to it, and add `OpenRouterAPIKey` as a Space secret.
-  (Whisper needs enough RAM; prefer a larger Space hardware tier if available.)
+- OpenRouter audio/video models need account credits; this app only uses OpenRouter for text summary.
+- Free Cloud apps have limited RAM. If the app is killed during transcription, try a shorter video or run locally with a larger Whisper model.
