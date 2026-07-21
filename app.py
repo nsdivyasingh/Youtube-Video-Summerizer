@@ -110,10 +110,13 @@ def _secret_get(*keys: str) -> str:
     try:
         node = st.secrets
         for key in keys:
-            if key not in node:
+            try:
+                node = node[key]
+            except Exception:
                 return ""
-            node = node[key]
-        return str(node).strip() if node is not None else ""
+        if node is None or isinstance(node, (dict, list)):
+            return ""
+        return str(node).strip().strip("'\"")
     except Exception:
         return ""
 
@@ -128,6 +131,7 @@ def resolve_api_key() -> tuple[str, str]:
         (_secret_get("general", "OPENROUTER_API_KEY"), "Streamlit secrets"),
     ]
     for value, source in candidates:
+        value = value.strip().strip("'\"")
         if value and value != PLACEHOLDER_KEY:
             return value, source
     return "", ""
@@ -142,6 +146,7 @@ def resolve_model() -> str:
         _secret_get("general", "OPENROUTER_MODEL"),
     ]
     for value in candidates:
+        value = value.strip().strip("'\"")
         if value:
             return value
     return DEFAULT_MODEL
@@ -149,14 +154,20 @@ def resolve_model() -> str:
 
 with st.sidebar:
     st.header("Settings")
-    api_key, key_source = resolve_api_key()
-    if api_key:
+    stored_key, key_source = resolve_api_key()
+    if stored_key:
+        api_key = stored_key
         st.caption(f"API key loaded from {key_source}.")
     else:
         st.warning(
-            "No API key found. Locally use `.env`. On Streamlit Cloud add it under "
+            "No stored key found. Paste it below, or add it under "
             "Manage app → Settings → Secrets."
         )
+        api_key = st.text_input(
+            "OpenRouter API key",
+            type="password",
+            help="Get a key at https://openrouter.ai/keys",
+        ).strip()
 
     model = st.text_input(
         "Summarize model",
@@ -165,15 +176,14 @@ with st.sidebar:
     )
     st.caption(f"Transcription: local Whisper ({WHISPER_MODEL_SIZE})")
 
-if not api_key:
+if not api_key or api_key == PLACEHOLDER_KEY:
     st.error(
         "Missing OpenRouter API key.\n\n"
-        "**Streamlit Cloud:** Manage app → Settings → Secrets, paste:\n\n"
+        "Paste it in the sidebar, **or** set Streamlit Cloud secrets to:\n\n"
         "```toml\n"
-        'OPENROUTER_API_KEY = "sk-or-v1-..."\n'
+        'OPENROUTER_API_KEY = "sk-or-v1-your-key"\n'
         "```\n\n"
-        "Then reboot the app.\n\n"
-        "**Local:** copy `.env.example` to `.env` and set `OPENROUTER_API_KEY`."
+        "Then click Save and reboot the app."
     )
     st.stop()
 
