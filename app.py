@@ -62,6 +62,16 @@ def download_audio(watch_url: str, out_dir: Path) -> Path:
                 "-t", str(MAX_AUDIO_SECONDS),
             ]
         },
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web_embedded", "web"]
+            }
+        },
+        "js_runtimes": {
+            "node": {"path": None},
+            "deno": {"path": None}
+        },
+        "remote_components": ["ejs:github"],
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(watch_url, download=True)
