@@ -38,7 +38,7 @@ def load_whisper(model_size: str = WHISPER_MODEL_SIZE) -> WhisperModel:
     return WhisperModel(model_size, device="cpu", compute_type="int8")
 
 
-def download_audio(watch_url: str, out_dir: Path) -> Path:
+def download_audio(watch_url: str, out_dir: Path, cookie_source: str = "None") -> Path:
     """Download audio from YouTube as mp3 (truncated to MAX_AUDIO_SECONDS)."""
     import yt_dlp
 
@@ -73,6 +73,17 @@ def download_audio(watch_url: str, out_dir: Path) -> Path:
         },
         "remote_components": ["ejs:github"],
     }
+    if cookie_source in ["Chrome", "Firefox", "Edge", "Brave"]:
+        ydl_opts["cookiesfrombrowser"] = (cookie_source.lower(),)
+    elif cookie_source == "cookies.txt (local file)":
+        cookies_file = Path("cookies.txt")
+        if cookies_file.exists():
+            ydl_opts["cookiefile"] = str(cookies_file)
+        else:
+            raise FileNotFoundError(
+                "Please place a 'cookies.txt' file in the project folder to use this option."
+            )
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(watch_url, download=True)
         video_id = info["id"]
@@ -188,6 +199,19 @@ with st.sidebar:
     )
     st.caption(f"Transcription: local Whisper ({WHISPER_MODEL_SIZE})")
 
+    st.header("Authentication (Optional)")
+    cookie_source = st.selectbox(
+        "Bypass Bot-Gating (Cookies)",
+        options=["None", "Chrome", "Firefox", "Edge", "Brave", "cookies.txt (local file)"],
+        index=0,
+        help=(
+            "If YouTube blocks you with 'Sign in to confirm you're not a bot', "
+            "select a browser where you are logged into YouTube, or place a "
+            "'cookies.txt' file in the app directory."
+        ),
+    )
+
+
 if not api_key or api_key == PLACEHOLDER_KEY:
     st.error(
         "Missing OpenRouter API key.\n\n"
@@ -222,7 +246,7 @@ if video_url:
         tmp_dir = Path(tempfile.mkdtemp(prefix="yt_sum_"))
         try:
             with st.spinner("Downloading audio..."):
-                audio_path = download_audio(watch_url, tmp_dir)
+                audio_path = download_audio(watch_url, tmp_dir, cookie_source=cookie_source)
 
             with st.spinner("Transcribing with local Whisper (first run downloads the model)..."):
                 transcript_text, language_code = transcribe_audio(audio_path)
